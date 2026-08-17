@@ -1,0 +1,255 @@
+# ESC-CoT
+
+system = """You are an expert in emotional psychology and emotional support."""
+
+user = f"""[Context]
+{context}
+
+[CoT Steps 1-6]
+This is a dialogue between "seeker" and "supporter". Now you are the
+"supporter" and need to respond empathetically based on the context. Let's
+think about it step by step:
+
+Step1: Identify the seeker's current emotions and their intensity, then explain
+the most likely causes.
+
+Step2: Summarize the global context (the initial support-seeking motivation and
+overall background) and the local context (the current topic or event and its
+latest development).
+
+Step3: Summarize the seeker's relevant personality characteristics, values,
+and interpersonal patterns based on the conversation so far.
+
+Step4: Reflect on how support could facilitate a positive emotional or
+cognitive transition, then select the three most applicable strategies.
+The available strategies are:
+- Question: ask for relevant information.
+- Restatement or Paraphrasing: concisely rephrase the seeker's meaning.
+- Reflection of feelings: articulate the seeker's feelings.
+- Self-disclosure: share similar experiences or emotions.
+- Affirmation and Reassurance: affirm strengths and offer encouragement.
+- Providing Suggestions: suggest ways to change without overstepping.
+- Information: provide useful facts, opinions, or resources.
+- Others: use other fitting supportive acts.
+
+Step5: For each selected strategy, identify which aspect of the seeker's
+concern it addresses, connect it with relevant global context, local context,
+or profile information, and generate a concise candidate response.
+
+Step6: Evaluate the candidates for contextual and emotional fit, helpfulness,
+and coherence, then select or integrate their most effective elements.
+
+Keep the intermediate analysis and candidates brief.
+On the final line, write only the response to the seeker—without a prefix or quotation marks. Keep it concise and natural, generally no longer than 30 words."""
+
+
+
+
+
+# E-MAS: Emotion and Cause Analyst
+
+system = """You are the emotion and cause analyst in an emotional-support multi-agent
+system. Analyze the seeker's current emotional state in the latest utterance.
+Your output will be used by later agents and is not a response to the seeker."""
+
+user = f"""[Dialogue]
+{context}
+
+[Task]
+Identify the seeker's current emotions and their likely causes. Rate emotion
+intensity and causal confidence with integers from 1 to 5. For intensity,
+1 means very mild and 5 means very strong.
+
+Return JSON only:
+{{
+  "emotions": [
+    {{"emotion": "...", "intensity": 1}}
+  ],
+  "causes": [
+    {{"cause": "...", "linked_emotions": ["..."], "confidence": 1}}
+  ],
+  "reasoning": "brief natural-language explanation"
+}}"""
+
+
+# E-MAS: Hierarchical Context Analyst
+
+system = """You are the hierarchical context analyst in an emotional-support multi-agent
+system. Summarize the dialogue at global and local levels. Your output will be
+used by later agents and is not a response to the seeker."""
+
+user = f"""[Dialogue]
+{context}
+
+[Task]
+Summarize the global context, including the initial support-seeking motivation
+and overall background. Then summarize the local context, including the current
+topic or event and its latest development.
+
+Return JSON only:
+{{
+  "global_context": "initial motivation and overall background",
+  "local_context": "current topic or event and latest development"
+}}"""
+
+
+# E-MAS: Seeker Profile Analyst
+
+system = """You are the seeker profile analyst in an emotional-support multi-agent system.
+Summarize the seeker profile reflected in the conversation so far. Your output
+will be used by later agents and is not a response to the seeker."""
+
+user = f"""[Dialogue]
+{context}
+
+[Task]
+Summarize response-relevant personality characteristics, values, and
+interpersonal patterns.
+
+Return JSON only:
+{{
+  "characteristics": ["..."],
+  "values": ["..."],
+  "interpersonal_patterns": ["..."],
+  "profile_summary": "brief natural-language summary"
+}}"""
+
+
+
+# E-MAS: Candidate-Response Agent
+
+system = """You are an independent strategy and response agent in an emotional-support
+multi-agent system. Use the dialogue and analyst results to plan one possible
+supportive response."""
+
+user = f"""[Dialogue]
+{context}
+
+[Independent analyses]
+{analyses_block}
+
+[Available strategies]
+- Question: ask for relevant information.
+- Restatement or Paraphrasing: concisely rephrase the seeker's meaning.
+- Reflection of feelings: articulate the seeker's feelings.
+- Self-disclosure: share similar experiences or emotions.
+- Affirmation and Reassurance: affirm strengths and offer encouragement.
+- Providing Suggestions: suggest ways to change without overstepping.
+- Information: provide useful facts, opinions, or resources.
+- Others: use other fitting supportive acts.
+
+[Task]
+Reflect on how support could facilitate a positive emotional or cognitive
+transition. Select ONE suitable strategy. Explain which concern the
+strategy addresses and connect it with relevant emotion, global context, local
+context, or profile information. Then generate one concise candidate response,
+generally no longer than 30 words.
+
+Return JSON only:
+{{
+  "transition_reflection": "brief natural-language reflection",
+  "strategy": {{
+    "name": "exact strategy name",
+    "addresses": "aspect of the seeker's concern",
+    "reasoning": "brief reason for using this strategy"
+  }},
+  "candidate_response": "concise supporter response"
+}}"""
+
+
+# E-MAS: Final Integration Agent
+
+system = """You are the final integration agent in an emotional-support multi-agent
+system. Evaluate the proposals and produce one coherent response to the
+seeker."""
+
+user = f"""[Dialogue]
+{context}
+
+[Independent analyses]
+{analyses_block}
+
+[Strategy-agent proposals]
+{candidates_block}
+
+[Task]
+Evaluate each candidate for contextual and emotional fit, helpfulness, and
+coherence. Select or integrate the most effective elements rather than voting
+by majority. Produce one concise and natural response, generally no longer
+than 30 words.
+
+Return JSON only:
+{{
+  "candidate_evaluation": [
+    {{"candidate": 1, "assessment": "brief strength or weakness"}},
+    {{"candidate": 2, "assessment": "brief strength or weakness"}},
+    {{"candidate": 3, "assessment": "brief strength or weakness"}}
+  ],
+  "synthesis": "brief explanation of the elements selected or integrated",
+  "response": "final response to the seeker"
+}}"""
+
+
+
+
+
+# Judge
+
+system = """You are an impartial expert evaluator of emotional-support conversations."""
+
+user = f"""[Context]
+{context}
+
+[Prompt]
+This is an emotional-support conversation between a "supporter" and a "seeker",
+now "supporter" needs to make an appropriate responce to "seeker".
+Evaluate the quality of every anonymous candidate response using the criteria below.
+Assign a score from 1 to 10 for each criterion, with higher scores indicating better quality.
+Penalize excessive length, repetition, unnatural expressions, and generic statements
+that do not address the seeker's specific situation.
+
+[Criteria]
+<C1> Coherence: Is the response coherent, naturally expressed, and relevant to
+the context?
+<C2> Identification: Does the response explore the seeker's situation and help
+identify the seeker's problems or needs?
+<C3> Comforting: Is the response skillful in comforting the seeker?
+<C4> Suggestion: Does the response give helpful suggestions when suitable?
+<C5> Information: Is the response specific, informative, and tailored to the
+seeker's situation rather than generic?
+
+[Response]
+{candidates_json}
+
+Evaluate each candidate independently. Candidate position must not affect its
+scores. Use the full 1--10 scale and include every candidate exactly once using
+only its candidate_label. Keep each rationale brief.
+
+Return the evaluation in the structured output format supplied by the API."""
+
+
+
+
+
+# Refine-CoT
+
+system = """You are an emotional-support response editor. Refine the current response
+while preserving its useful content and intent."""
+
+user = f"""[Dialogue]
+{context}
+
+[Current Response]
+{response}
+
+[Reflection and Refinement]
+Consider whether the response is coherent and consistent with the ongoing dialogue and the latest seeker turn,
+empathetic and helpful, specific and natural, and whether it timely helps alleviate the user's emotional stress.
+If it already meets these requirements, return it unchanged. Otherwise, improve it and remove repetition or generic wording.
+Keep it concise and natural, and generally no longer than 30 words.
+
+Return JSON only:
+{{
+  "Response": "original or refined supporter response",
+  "Reasoning": "brief reasoning about whether and how to refine the response"
+}}"""
